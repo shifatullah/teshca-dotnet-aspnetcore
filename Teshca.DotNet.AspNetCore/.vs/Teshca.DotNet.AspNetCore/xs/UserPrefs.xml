@@ -1,0 +1,31 @@
+﻿<Properties StartupConfiguration="{3941162A-2C6E-447A-AF04-C2A3D24A2244}|Default">
+  <MonoDevelop.Ide.ItemProperties.Teshca.DotNet.AspNetCore FirstBuild="True" PreferredExecutionTarget="/Applications/Safari.app" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Teshca.DotNet.AspNetCore/Startup.cs">
+    <Files>
+      <File FileName="Teshca.DotNet.AspNetCore/appsettings.Development.json" Line="1" Column="1" />
+      <File FileName="Teshca.DotNet.AspNetCore/Program.cs" Line="1" Column="1" />
+      <File FileName="Teshca.DotNet.AspNetCore/Startup.cs" Line="35" Column="56" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="Teshca.DotNet.AspNetCore" expanded="True">
+            <Node name="Teshca.DotNet.AspNetCore" expanded="True">
+              <Node name="Dependencies" expanded="True">
+                <Node name="FrameworkReferences" expanded="True" />
+              </Node>
+              <Node name="appsettings.json" expanded="True" />
+              <Node name="Startup.cs" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>
