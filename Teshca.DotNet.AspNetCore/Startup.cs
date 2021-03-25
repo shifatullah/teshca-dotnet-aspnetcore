@@ -18,6 +18,7 @@ namespace Teshca.DotNet.AspNetCore
     {
 
         private StringBuilder _response;
+        private StringBuilder _startupConstructor;
         private StringBuilder _listOfMiddleware;
 
         public Startup(IWebHostEnvironment webHostEnvironment, IConfiguration configuration)            
@@ -28,14 +29,7 @@ namespace Teshca.DotNet.AspNetCore
 
             _response.Append("<h1>Tescha Hello World</h1>");
 
-            _response.Append("</div>Startup Constructor</div>");
-
-            _response.Append("<div>IWebHostEnvironment Features:</div>");
-
-            _response.Append($"<div>ApplicationName: {webHostEnvironment.ApplicationName}</div>");
-            _response.Append($"<div>EnvironmentName: {webHostEnvironment.EnvironmentName}</div>");
-            _response.Append($"<div>ContentRootPath: {webHostEnvironment.ContentRootPath}</div>");
-            _response.Append($"<div>IsDevelopment(): {webHostEnvironment.IsDevelopment()}</div>");
+            _response.Append("<div><a href='/startupconstructor'>Information available in Startup class constructor</a></div>");
 
             _response.Append("<div><a href='/mycustomerror'>Let's throw custom exception to see DeveloperExceptionPage?</a></div>");
 
@@ -44,6 +38,16 @@ namespace Teshca.DotNet.AspNetCore
             _response.Append("<div><a href='/listofmiddleware?option=Dummy'>List of Middleware registered in request pipeline</a></div>");
 
             _response.Append("</body></html>");
+
+            _startupConstructor = new StringBuilder();
+            _startupConstructor.Append("<html><body>");
+            _startupConstructor.Append("<div><h1>Startup Constructor</h1></div>");
+            _startupConstructor.Append("<div><h3>IWebHostEnvironment Features:</h3></div>");
+            _startupConstructor.Append($"<div>ApplicationName: {webHostEnvironment.ApplicationName}</div>");
+            _startupConstructor.Append($"<div>EnvironmentName: {webHostEnvironment.EnvironmentName}</div>");
+            _startupConstructor.Append($"<div>ContentRootPath: {webHostEnvironment.ContentRootPath}</div>");
+            _startupConstructor.Append($"<div>IsDevelopment(): {webHostEnvironment.IsDevelopment()}</div>");
+            _startupConstructor.Append("</body></html>");
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -68,6 +72,11 @@ namespace Teshca.DotNet.AspNetCore
                 endpoints.MapGet("/", async context =>
                 {
                     await context.Response.WriteAsync(_response.ToString());
+                });
+
+                endpoints.MapGet("/startupconstructor", async context =>
+                {
+                    await context.Response.WriteAsync(_startupConstructor.ToString());
                 });
 
                 endpoints.MapGet("/mycustomerror", async context =>
