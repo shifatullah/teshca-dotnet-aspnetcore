@@ -37,7 +37,7 @@ namespace Teshca.DotNet.AspNetCore
             _response.Append($"<div>ContentRootPath: {webHostEnvironment.ContentRootPath}</div>");
             _response.Append($"<div>IsDevelopment(): {webHostEnvironment.IsDevelopment()}</div>");
 
-            _response.Append("<div><a href='/tryerror'>Let's throw exception to see DeveloperExceptionPage?</a></div>");
+            _response.Append("<div><a href='/mycustomerror'>Let's throw custom exception to see DeveloperExceptionPage?</a></div>");
 
             _response.Append("<div><a href='/mystartupfilter?option=Dummy'>IStartupFilter example?</a></div>");
 
@@ -70,7 +70,7 @@ namespace Teshca.DotNet.AspNetCore
                     await context.Response.WriteAsync(_response.ToString());
                 });
 
-                endpoints.MapGet("/tryerror", async context =>
+                endpoints.MapGet("/mycustomerror", async context =>
                 {
                     throw new ApplicationException("my custom error");
                 });
