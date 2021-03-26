@@ -16,6 +16,7 @@ namespace Teshca.DotNet.AspNetCore
             return builder =>
             {
                 builder.UseMiddleware<MyMiddleware>();
+                builder.UseMiddleware<MyMiddlewareWithDependency>();
                 next(builder);
             };
         }
