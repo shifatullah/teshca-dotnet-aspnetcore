@@ -3,11 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.IISIntegration;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +26,7 @@ namespace Teshca.DotNet.AspNetCore
         private StringBuilder _response;
         private StringBuilder _startupConstructor;
         private StringBuilder _listOfMiddleware;
+        IServiceCollection _services;
 
         public Startup(IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
         {
@@ -36,8 +43,18 @@ namespace Teshca.DotNet.AspNetCore
             _response.Append("<div><a href='/listofmiddleware?option=Dummy'>List of Middleware registered in request pipeline</a></div>");
 
             _response.Append("<div><h3>Dependency Injection</h3></div>");
-            _response.Append("<div><a href='/configureservices'>Services registration in Startup.ConfigureServices()</a></div>");
+            _response.Append("<div><a href='/registeredservices'>Services registration in Startup.ConfigureServices()</a></div>");
             _response.Append("<div><a href='/servicefrommain'>Call service from main</a></div>");
+
+            _response.Append("<div><h3>Configuration</h3></div>");
+            _response.Append("<div><a href='/configurationinfo'>Configuration Information</a></div>");
+
+            _response.Append("<div><h3>Context</h3></div>");
+            _response.Append("<div><a href='/requestinfo'>Request Information</a></div>");
+            _response.Append("<div><a href='/serverinfo'>Server Information</a></div>");
+            _response.Append("<div><a href='/connectioninfo'>Connection Information</a></div>");
+            _response.Append("<div><a href='/authenticationinfo'>Authentication Information</a></div>");
+            _response.Append("<div><a href='/featuresinfo'>Features Information</a></div>");
 
             _response.Append("</body></html>");
 
@@ -53,16 +70,17 @@ namespace Teshca.DotNet.AspNetCore
             services.AddScoped<MyScopedDependency>();
             services.AddTransient<MyTransientDependency>();
             services.AddSingleton<MySingletonDependency>();
+
+            _services = services;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IConfiguration config, IServer server)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
@@ -110,6 +128,145 @@ namespace Teshca.DotNet.AspNetCore
                 {
                     await context.Response.WriteAsync(Program.ServiceFromMain.ToString());
                 });
+
+                endpoints.MapGet("/requestinfo", async context =>
+                {
+                    var sb = new StringBuilder();
+                    var nl = System.Environment.NewLine;
+                    var rule = string.Concat(nl, new string('-', 40), nl);
+
+                    sb.Append($"Request{rule}");
+                    sb.Append($"{DateTimeOffset.Now}{nl}");
+                    sb.Append($"{context.Request.Method} {context.Request.Path}{nl}");
+                    sb.Append($"Scheme: {context.Request.Scheme}{nl}");
+                    sb.Append($"Host: {context.Request.Headers["Host"]}{nl}");
+                    sb.Append($"PathBase: {context.Request.PathBase.Value}{nl}");
+                    sb.Append($"Path: {context.Request.Path.Value}{nl}");
+                    sb.Append($"Query: {context.Request.QueryString.Value}{nl}{nl}");
+
+                    sb.Append($"Headers{rule}");
+                    foreach (var header in context.Request.Headers)
+                    {
+                        sb.Append($"{header.Key}: {header.Value}{nl}");
+                    }
+                    sb.Append(nl);
+
+                    await context.Response.WriteAsync(sb.ToString());
+                });
+
+                endpoints.MapGet("/serverinfo", async context =>
+                {
+                    var sb = new StringBuilder();
+                    var nl = System.Environment.NewLine;
+                    var rule = string.Concat(nl, new string('-', 40), nl);
+
+                    sb.Append($"Server{rule}");
+                    sb.Append($"{DateTimeOffset.Now}{nl}");
+                    sb.Append($"{server.GetType()}{nl}");
+
+                    if (server.GetType().FullName == "Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl")
+                    {
+                        KestrelWalker serverWalker = new KestrelWalker();
+                        sb.Append(serverWalker.Walk(server));
+                    }
+
+                    await context.Response.WriteAsync(sb.ToString());
+                });
+
+                endpoints.MapGet("/connectioninfo", async context =>
+                {
+                    var sb = new StringBuilder();
+                    var nl = System.Environment.NewLine;
+                    var rule = string.Concat(nl, new string('-', 40), nl);
+
+                    sb.Append($"Connection{rule}");
+                    sb.Append($"RemoteIp: {context.Connection.RemoteIpAddress}{nl}");
+                    sb.Append($"RemotePort: {context.Connection.RemotePort}{nl}");
+                    sb.Append($"LocalIp: {context.Connection.LocalIpAddress}{nl}");
+                    sb.Append($"LocalPort: {context.Connection.LocalPort}{nl}");
+                    sb.Append($"ClientCert: {context.Connection.ClientCertificate}{nl}{nl}");
+
+                    await context.Response.WriteAsync(sb.ToString());
+                });
+
+                endpoints.MapGet("/configurationinfo", async context =>
+                {
+                    var sb = new StringBuilder();
+                    var nl = System.Environment.NewLine;
+                    var rule = string.Concat(nl, new string('-', 40), nl);
+
+                    sb.Append($"Configuration{rule}");
+                    foreach (var pair in config.AsEnumerable())
+                    {
+                        sb.Append($"{pair.Key}: {pair.Value}{nl}");
+                    }
+                    sb.Append(nl);
+
+                    sb.Append($"Environment Variables{rule}");
+                    var vars = System.Environment.GetEnvironmentVariables();
+                    foreach (var key in vars.Keys.Cast<string>().OrderBy(key => key,
+                        StringComparer.OrdinalIgnoreCase))
+                    {
+                        var value = vars[key];
+                        sb.Append($"{key}: {value}{nl}");
+                    }
+
+                    await context.Response.WriteAsync(sb.ToString());
+                });
+
+                endpoints.MapGet("/authenticationinfo", async context =>
+                {
+                    var sb = new StringBuilder();
+                    var nl = System.Environment.NewLine;
+                    var rule = string.Concat(nl, new string('-', 40), nl);
+
+                    sb.Append($"Identity{rule}");
+                    sb.Append($"User: {context.User.Identity.Name}{nl}");
+
+                    // TODO: fix authentication issues
+                    //var authSchemeProvider = app.ApplicationServices
+                    //    .GetRequiredService<IAuthenticationSchemeProvider>();
+
+                    //var scheme = await authSchemeProvider
+                    //    .GetSchemeAsync(IISDefaults.AuthenticationScheme);
+
+                    //sb.Append($"DisplayName: {scheme?.DisplayName}{nl}{nl}");
+
+                    await context.Response.WriteAsync(sb.ToString());
+                });
+
+                endpoints.MapGet("/featuresinfo", async context =>
+                {
+                    var sb = new StringBuilder();
+                    var nl = System.Environment.NewLine;
+                    var rule = string.Concat(nl, new string('-', 40), nl);
+
+                    sb.Append($"Websockets{rule}");
+                    if (context.Features.Get<IHttpUpgradeFeature>() != null)
+                    {
+                        sb.Append($"Status: Enabled{nl}{nl}");
+                    }
+                    else
+                    {
+                        sb.Append($"Status: Disabled{nl}{nl}");
+                    }
+
+                    await context.Response.WriteAsync(sb.ToString());
+                });
+
+                endpoints.MapGet("/registeredservices", async context =>
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("<html><body>");
+                    sb.Append("<h1>All Services</h1>");
+                    foreach (var svc in _services)
+                    {
+                        sb.Append($"<h3>{svc.ServiceType.Name}</h3>");
+                        sb.Append($"<div>Lifetime: {svc.Lifetime}, FullName: {svc.ServiceType.FullName}, ImplementationType?.FullName{svc.ImplementationType?.FullName}</div>");
+                    }
+                    sb.Append("</body></html>");
+                    await context.Response.WriteAsync(sb.ToString());
+                });
             });
 
             CollectListOfMiddleware(app);
@@ -135,11 +292,11 @@ namespace Teshca.DotNet.AspNetCore
             List<Func<RequestDelegate, RequestDelegate>> _componentsValue =
                 _componentsField.GetValue(app) as List<Func<RequestDelegate, RequestDelegate>>;
             _componentsValue.ForEach(x =>
-            {
-                FieldInfo middlewareField = x.Target.GetType().GetRuntimeFields().Single(pi => pi.Name == "middleware");
-                object middlewareValue = middlewareField.GetValue(x.Target);
-                _listOfMiddleware.Append($"{middlewareValue.ToString()}\n");
-            }
+                {
+                    FieldInfo middlewareField = x.Target.GetType().GetRuntimeFields().Single(pi => pi.Name == "middleware");
+                    object middlewareValue = middlewareField.GetValue(x.Target);
+                    _listOfMiddleware.Append($"{middlewareValue.ToString()}\n");
+                }
             );
         }
     }
