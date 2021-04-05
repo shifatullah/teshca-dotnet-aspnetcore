@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
 namespace Teshca.DotNet.AspNetCore
@@ -56,6 +58,11 @@ namespace Teshca.DotNet.AspNetCore
             _response.Append("<div><a href='/authenticationinfo'>Authentication Information</a></div>");
             _response.Append("<div><a href='/featuresinfo'>Features Information</a></div>");
 
+            _response.Append("<div><h3>Static Files</h3></div>");
+            _response.Append("<div><a href='/staticfilesinfo'>Static Files Info</a></div>");
+            _response.Append("<div><a href='/StaticFiles/NET_Core_Logo.png'>NET_Core_Logo.png</a></div>");
+            _response.Append("<div><a href='/MyImages'>Browse MyImges directory inside web root</a></div>");
+
             _response.Append("</body></html>");
 
             CollectInfoInsideStartupConstructor(webHostEnvironment);
@@ -70,6 +77,7 @@ namespace Teshca.DotNet.AspNetCore
             services.AddScoped<MyScopedDependency>();
             services.AddTransient<MyTransientDependency>();
             services.AddSingleton<MySingletonDependency>();
+            services.AddDirectoryBrowser();
 
             _services = services;
         }
@@ -81,11 +89,33 @@ namespace Teshca.DotNet.AspNetCore
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            var options = new DefaultFilesOptions();
+            options.DefaultFileNames.Clear();
+            options.DefaultFileNames.Add("mydefault.html");
+            app.UseDefaultFiles(options);
+
+            app.UseFileServer(enableDirectoryBrowsing: true);
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                             Path.Combine(env.ContentRootPath, "MyStaticFiles")),
+                RequestPath = "/StaticFiles"
+            });
+
+            app.UseDirectoryBrowser(new DirectoryBrowserOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                               Path.Combine(env.WebRootPath, "images")),
+                RequestPath = "/MyImages"
+            });
+
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/", async context =>
+                endpoints.MapGet("/home", async context =>
                 {
                     await context.Response.WriteAsync(_response.ToString());
                 });
@@ -264,6 +294,17 @@ namespace Teshca.DotNet.AspNetCore
                         sb.Append($"<h3>{svc.ServiceType.Name}</h3>");
                         sb.Append($"<div>Lifetime: {svc.Lifetime}, FullName: {svc.ServiceType.FullName}, ImplementationType?.FullName{svc.ImplementationType?.FullName}</div>");
                     }
+                    sb.Append("</body></html>");
+                    await context.Response.WriteAsync(sb.ToString());
+                });
+
+                endpoints.MapGet("/staticfilesinfo", async context =>
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("<html><body>");
+                    sb.Append("<h1>Static Files Information</h1>");
+                    sb.Append($"<div>ContentRootPath: {env.ContentRootPath}</div>");
+                    sb.Append($"<div>WebRootPath: {env.WebRootPath}</div>");
                     sb.Append("</body></html>");
                     await context.Response.WriteAsync(sb.ToString());
                 });

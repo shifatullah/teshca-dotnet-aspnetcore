@@ -70,6 +70,7 @@ namespace Teshca.DotNet.AspNetCore
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.UseWebRoot("mywwwroot");
                     webBuilder.UseStartup<Startup>();
                 });
     }
