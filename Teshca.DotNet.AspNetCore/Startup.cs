@@ -334,9 +334,12 @@ namespace Teshca.DotNet.AspNetCore
                 _componentsField.GetValue(app) as List<Func<RequestDelegate, RequestDelegate>>;
             _componentsValue.ForEach(x =>
                 {
-                    FieldInfo middlewareField = x.Target.GetType().GetRuntimeFields().Single(pi => pi.Name == "middleware");
-                    object middlewareValue = middlewareField.GetValue(x.Target);
-                    _listOfMiddleware.Append($"{middlewareValue.ToString()}\n");
+                    FieldInfo middlewareField = x.Target.GetType().GetRuntimeFields().FirstOrDefault(pi => pi.Name == "middleware");
+                    if (middlewareField != null)
+                    {
+                        object middlewareValue = middlewareField.GetValue(x.Target);
+                        _listOfMiddleware.Append($"{middlewareValue.ToString()}\n");
+                    }
                 }
             );
         }
