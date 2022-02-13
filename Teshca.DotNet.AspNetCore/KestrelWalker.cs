@@ -58,7 +58,9 @@ namespace Teshca.DotNet.AspNetCore
             sb.Append($"Options.AllowResponseHeaderCompression: {options.AllowResponseHeaderCompression}\n");
             sb.Append($"Options.Limits.MaxRequestBodySize: {options.Limits.MaxRequestBodySize}\n");
             sb.Append($"Options.Limits.Http2.HeaderTableSize: {options.Limits.Http2.HeaderTableSize}\n");
+#if NET5_0
             sb.Append($"Options.Limits.Http3.HeaderTableSize: {options.Limits.Http3.HeaderTableSize}\n");
+#endif
 
             return sb.ToString();
         }

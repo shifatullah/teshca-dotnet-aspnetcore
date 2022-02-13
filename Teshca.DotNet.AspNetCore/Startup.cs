@@ -63,6 +63,10 @@ namespace Teshca.DotNet.AspNetCore
             _response.Append("<div><a href='/StaticFiles/NET_Core_Logo.png'>NET_Core_Logo.png</a></div>");
             _response.Append("<div><a href='/MyImages'>Browse MyImges directory inside web root</a></div>");
 
+            _response.Append("<div><h3>Controllers</h3></div>");
+            _response.Append("<div><a href='/mymvc'>Mvc Controller</a></div>");            
+            _response.Append("<div><a href='/api/myapi'>Api Controller</a></div>");
+
             _response.Append("</body></html>");
 
             CollectInfoInsideStartupConstructor(webHostEnvironment);
@@ -78,6 +82,8 @@ namespace Teshca.DotNet.AspNetCore
             services.AddTransient<MyTransientDependency>();
             services.AddSingleton<MySingletonDependency>();
             services.AddDirectoryBrowser();
+
+            services.AddControllersWithViews();
 
             _services = services;
         }
@@ -308,8 +314,14 @@ namespace Teshca.DotNet.AspNetCore
                     sb.Append("</body></html>");
                     await context.Response.WriteAsync(sb.ToString());
                 });
-            });
 
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");            
+
+                endpoints.MapControllers();
+            });                
+            
             CollectListOfMiddleware(app);
         }
 
